@@ -1,57 +1,63 @@
-" ~/.vim/pack/plugins/start/vim-ezweb/syntax/ezweb.vim
-if exists("b:current_syntax")
+if exists('b:current_syntax')
   finish
 endif
 
-" --- 1. Basic Directives ---
-syn cluster ezwebDirectives contains=ezwebDirectiveEscape,ezwebDirectiveSection,ezwebDirectiveNumbered,ezwebDirectiveInclude,ezwebDirectiveIndex
+syn match ezwebEscape "^@@"
+syn match ezwebTitledSection "^@\*.*"
+syn match ezwebSection "^@[^@*idlox].*"
+syn match ezwebInclude "^@i .*"
+syn match ezwebIndex "^@x .*"
+syn match ezwebLang "^@l .*"
 
-syn match ezwebDirectiveEscape "^@@"
-syn match ezwebDirectiveSection "^@\*.*$"
-syn match ezwebDirectiveNumbered "^@[ \t].*$"
-syn match ezwebDirectiveInclude "^@i .*$"
-syn match ezwebDirectiveIndex "^@x .*$"
+syn match ezwebChunkStart "^@o .*" contained
+syn match ezwebChunkStart "^@d .*" contained
 
-" Global fallbacks (Only trigger if we are OUTSIDE a known language zone)
-syn match ezwebDirectiveChunk "^@[od] .*$"
-syn match ezwebDirectiveLangDef "^@l .*$"
+hi def link ezwebEscape Special
+hi def link ezwebTitledSection Title
+hi def link ezwebSection Title
+hi def link ezwebInclude PreProc
+hi def link ezwebIndex PreProc
+hi def link ezwebLang Statement
+hi def link ezwebChunkStart Define
 
-hi def link ezwebDirectiveEscape    Special
-hi def link ezwebDirectiveSection   Title
-hi def link ezwebDirectiveNumbered  Statement
-hi def link ezwebDirectiveInclude   Include
-hi def link ezwebDirectiveIndex     Identifier
-hi def link ezwebDirectiveChunk     Macro
-hi def link ezwebDirectiveLangDef   Type
+let s:lang_overrides = ['haskell', 'python', 'javascript', 'bash', 'sh']
 
-
-" --- 2. Stateful Language Zones ---
-" Add any languages you need here. The string must match Vim's internal filetype name.
-let s:languages = get(g:, 'ezweb_languages', ['haskell', 'markdown', 'c', 'cpp', 'python', 'sh'])
-let s:bcs = exists('b:current_syntax') ? b:current_syntax : ''
-
-for s:lang in s:languages
-  " Safely load the syntax rules without aborting the loop if the file is missing
+if b:ezweb_lang != ''
+  let s:syndone = ''
+  execute 'syn include @ezwebDefault syntax/' . b:ezweb_lang . '.vim'
   unlet! b:current_syntax
-  silent! exe 'syn include @ezwebLang_' . s:lang . ' syntax/' . s:lang . '.vim'
+  syn region ezwebChunkDefault start="^@o [^:]*$" end="^$"me=e-1 contains=ezwebChunkStart,@ezwebDefault keepend
+  syn region ezwebChunkDefault start="^@d [^:]*$" end="^$"me=e-1 contains=ezwebChunkStart,@ezwebDefault keepend
+  let s:syndone = b:ezweb_lang
+else
+  syn region ezwebChunkDefault start="^@o [^:]*$" end="^$"me=e-1 contains=ezwebChunkStart keepend
+  syn region ezwebChunkDefault start="^@d [^:]*$" end="^$"me=e-1 contains=ezwebChunkStart keepend
+  let s:syndone = ''
+endif
 
-  " Zone starts at `@l <lang>`
-  " \c makes it case-insensitive, \> ensures word boundary, .* catches trailing spaces
-  exe 'syn region ezwebZone_' . s:lang . ' start="^\s*@l\s\+\c' . s:lang . '\>.*$" end="^\ze\s*@l\s\+" contains=@ezwebDirectives,ezwebChunk_' . s:lang . ',ezwebDirectiveLang_' . s:lang
-
-  " Highlight the @l directive specifically within its own zone
-  exe 'syn match ezwebDirectiveLang_' . s:lang . ' "^\s*@l\s\+\c' . s:lang . '\>.*$" contained'
-  exe 'hi def link ezwebDirectiveLang_' . s:lang . ' Type'
-
-  " The Code Chunk
-  " keepend is CRITICAL here: it forces the region to terminate exactly at the empty line,
-  " preventing inner syntax rules from accidentally consuming the boundary.
-  exe 'syn region ezwebChunk_' . s:lang . ' matchgroup=ezwebDirectiveChunk start="^@[od]\s.*$" end="^$" contained keepend contains=@ezwebLang_' . s:lang
+for s:lang in s:lang_overrides
+  if s:lang ==# s:syndone
+    continue
+  endif
+  let s:cluster = '@ezwebLang_' . s:lang
+  try
+    execute 'syn include ' . s:cluster . ' syntax/' . s:lang . '.vim'
+    unlet! b:current_syntax
+  catch
+    continue
+  endtry
+  execute 'syn region ezwebChunk_' . s:lang
+        \ . ' start="^@o ' . s:lang . ':.*$"'
+        \ . ' end="^$"me=e-1'
+        \ . ' contains=ezwebChunkStart,' . s:cluster
+        \ . ' keepend'
+  execute 'syn region ezwebChunk_' . s:lang
+        \ . ' start="^@d ' . s:lang . ':.*$"'
+        \ . ' end="^$"me=e-1'
+        \ . ' contains=ezwebChunkStart,' . s:cluster
+        \ . ' keepend'
 endfor
 
-" Restore original syntax state
-if s:bcs != ''
-  let b:current_syntax = s:bcs
-else
-  let b:current_syntax = "ezweb"
-endif
+hi def link ezwebChunkDefault Normal
+
+let b:current_syntax = 'ezweb'
