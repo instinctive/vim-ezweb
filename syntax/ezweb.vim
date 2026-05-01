@@ -4,21 +4,18 @@ if exists("b:current_syntax")
 endif
 
 " --- 1. Basic Directives ---
-" Cluster of all standalone directives so they can be matched globally
 syn cluster ezwebDirectives contains=ezwebDirectiveEscape,ezwebDirectiveSection,ezwebDirectiveNumbered,ezwebDirectiveInclude,ezwebDirectiveIndex
 
-" Match individual directives (strictly anchored to the start of the line)
 syn match ezwebDirectiveEscape "^@@"
 syn match ezwebDirectiveSection "^@\*.*$"
 syn match ezwebDirectiveNumbered "^@[ \t].*$"
 syn match ezwebDirectiveInclude "^@i .*$"
 syn match ezwebDirectiveIndex "^@x .*$"
 
-" Provide default fallback highlighting if a chunk/lang is used outside a known zone
+" Global fallbacks (Only trigger if we are OUTSIDE a known language zone)
 syn match ezwebDirectiveChunk "^@[od] .*$"
 syn match ezwebDirectiveLangDef "^@l .*$"
 
-" --- 2. Highlight Links ---
 hi def link ezwebDirectiveEscape    Special
 hi def link ezwebDirectiveSection   Title
 hi def link ezwebDirectiveNumbered  Statement
@@ -28,33 +25,33 @@ hi def link ezwebDirectiveChunk     Macro
 hi def link ezwebDirectiveLangDef   Type
 
 
-" --- 3. Stateful Language Zones ---
-" Define the languages you want to support. You can override this in your .vimrc
-" by setting: let g:ezweb_languages = ['haskell', 'markdown', 'c', 'python']
-let s:languages = get(g:, 'ezweb_languages', ['haskell', 'markdown', 'python', 'sh'])
+" --- 2. Stateful Language Zones ---
+" Add any languages you need here. The string must match Vim's internal filetype name.
+let s:languages = get(g:, 'ezweb_languages', ['haskell', 'markdown', 'c', 'cpp', 'python', 'sh'])
+let s:bcs = exists('b:current_syntax') ? b:current_syntax : ''
 
 for s:lang in s:languages
-  " Attempt to load the syntax file for the language safely
-  try
-    unlet! b:current_syntax
-    exe 'syn include @ezwebLang_' . s:lang . ' syntax/' . s:lang . '.vim'
-  catch
-    continue
-  endtry
+  " Safely load the syntax rules without aborting the loop if the file is missing
+  unlet! b:current_syntax
+  silent! exe 'syn include @ezwebLang_' . s:lang . ' syntax/' . s:lang . '.vim'
 
-  " Create a state Zone. It begins at `@l <lang>` and ends right before (\ze) the next `@l`
-  exe 'syn region ezwebZone_' . s:lang . ' start="^@l\s\+' . s:lang . '\s*$" end="^\ze@l\s\+" contains=@ezwebDirectives,ezwebChunk_' . s:lang . ',ezwebDirectiveLang_' . s:lang
+  " Zone starts at `@l <lang>`
+  " \c makes it case-insensitive, \> ensures word boundary, .* catches trailing spaces
+  exe 'syn region ezwebZone_' . s:lang . ' start="^\s*@l\s\+\c' . s:lang . '\>.*$" end="^\ze\s*@l\s\+" contains=@ezwebDirectives,ezwebChunk_' . s:lang . ',ezwebDirectiveLang_' . s:lang
 
   " Highlight the @l directive specifically within its own zone
-  exe 'syn match ezwebDirectiveLang_' . s:lang . ' "^@l\s\+' . s:lang . '\s*$" contained'
+  exe 'syn match ezwebDirectiveLang_' . s:lang . ' "^\s*@l\s\+\c' . s:lang . '\>.*$" contained'
   exe 'hi def link ezwebDirectiveLang_' . s:lang . ' Type'
 
-  " Define the actual code chunk region inside this zone.
-  " - matchgroup=ezwebDirectiveChunk: Highlights the @o or @d line itself as a directive.
-  " - start="^@[od]\s.*$": Starts on the chunk definition.
-  " - end="^$": Terminates strictly on an empty line, per your spec.
-  " - contains=@ezwebLang_...: Applies the specific language syntax to the inner body.
-  exe 'syn region ezwebChunk_' . s:lang . ' matchgroup=ezwebDirectiveChunk start="^@[od]\s.*$" end="^$" contained contains=@ezwebLang_' . s:lang
+  " The Code Chunk
+  " keepend is CRITICAL here: it forces the region to terminate exactly at the empty line,
+  " preventing inner syntax rules from accidentally consuming the boundary.
+  exe 'syn region ezwebChunk_' . s:lang . ' matchgroup=ezwebDirectiveChunk start="^@[od]\s.*$" end="^$" contained keepend contains=@ezwebLang_' . s:lang
 endfor
 
-let b:current_syntax = "ezweb"
+" Restore original syntax state
+if s:bcs != ''
+  let b:current_syntax = s:bcs
+else
+  let b:current_syntax = "ezweb"
+endif
