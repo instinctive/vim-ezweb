@@ -9,9 +9,6 @@ syn match ezwebInclude "^@i .*"
 syn match ezwebIndex "^@x .*"
 syn match ezwebLang "^@l .*"
 
-syn match ezwebChunkStart "^@o .*" contained
-syn match ezwebChunkStart "^@d .*" contained
-
 hi def link ezwebEscape Special
 hi def link ezwebTitledSection Statement
 hi def link ezwebSection Special
@@ -28,12 +25,12 @@ if b:ezweb_lang != ''
   let s:syndone = ''
   execute 'syn include @ezwebDefault syntax/' . b:ezweb_lang . '.vim'
   unlet! b:current_syntax
-  syn region ezwebChunkDefault start="^@o [^:]*$" end="^$"me=e-1 contains=ezwebChunkStart,@ezwebDefault keepend
-  syn region ezwebChunkDefault start="^@d [^:]*$" end="^$"me=e-1 contains=ezwebChunkStart,@ezwebDefault keepend
+  syn region ezwebChunkDefault matchgroup=ezwebChunkStart start="^@o [^:]*$" end="^$"me=e-1 contains=@ezwebDefault keepend
+  syn region ezwebChunkDefault matchgroup=ezwebChunkStart start="^@d [^:]*$" end="^$"me=e-1 contains=@ezwebDefault keepend
   let s:syndone = b:ezweb_lang
 else
-  syn region ezwebChunkDefault start="^@o [^:]*$" end="^$"me=e-1 contains=ezwebChunkStart keepend
-  syn region ezwebChunkDefault start="^@d [^:]*$" end="^$"me=e-1 contains=ezwebChunkStart keepend
+  syn region ezwebChunkDefault matchgroup=ezwebChunkStart start="^@o [^:]*$" end="^$"me=e-1 keepend
+  syn region ezwebChunkDefault matchgroup=ezwebChunkStart start="^@d [^:]*$" end="^$"me=e-1 keepend
   let s:syndone = ''
 endif
 
@@ -49,14 +46,16 @@ for s:lang in s:lang_overrides
     continue
   endtry
   execute 'syn region ezwebChunk_' . s:lang
+        \ . ' matchgroup=ezwebChunkStart'
         \ . ' start="^@o ' . s:lang . ':.*$"'
         \ . ' end="^$"me=e-1'
-        \ . ' contains=ezwebChunkStart,' . s:cluster
+        \ . ' contains=' . s:cluster
         \ . ' keepend'
   execute 'syn region ezwebChunk_' . s:lang
+        \ . ' matchgroup=ezwebChunkStart'
         \ . ' start="^@d ' . s:lang . ':.*$"'
         \ . ' end="^$"me=e-1'
-        \ . ' contains=ezwebChunkStart,' . s:cluster
+        \ . ' contains=' . s:cluster
         \ . ' keepend'
 endfor
 
