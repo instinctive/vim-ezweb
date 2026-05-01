@@ -20,6 +20,8 @@ hi def link ezwebIndex PreProc
 hi def link ezwebLang PreProc
 hi def link ezwebChunkStart Special
 
+hi Statement cterm=bold gui=bold
+
 let s:lang_overrides = ['haskell', 'python', 'javascript', 'bash', 'sh']
 
 if b:ezweb_lang != ''
