@@ -3,7 +3,7 @@ if exists('b:current_syntax')
 endif
 
 syn match ezwebEscape "^@@"
-syn match ezwebTitledSection "^@\*.*"
+syn match ezwebTitledSection "^@\*[^.]*\."
 syn match ezwebSection "^@[^@*idlox].*"
 syn match ezwebInclude "^@i .*"
 syn match ezwebIndex "^@x .*"
