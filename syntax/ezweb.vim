@@ -13,12 +13,12 @@ syn match ezwebChunkStart "^@o .*" contained
 syn match ezwebChunkStart "^@d .*" contained
 
 hi def link ezwebEscape Special
-hi def link ezwebTitledSection Title
-hi def link ezwebSection Title
+hi def link ezwebTitledSection Statement
+hi def link ezwebSection Special
 hi def link ezwebInclude PreProc
 hi def link ezwebIndex PreProc
-hi def link ezwebLang Statement
-hi def link ezwebChunkStart Define
+hi def link ezwebLang PreProc
+hi def link ezwebChunkStart Special
 
 let s:lang_overrides = ['haskell', 'python', 'javascript', 'bash', 'sh']
 
