@@ -4,7 +4,7 @@ endif
 
 syn match ezwebEscape "^@@"
 syn match ezwebTitledSection "^@\*[^.]*\."
-syn match ezwebSection "^@[^@*idlox].*"
+syn match ezwebSection "^@[^@*idlox]"
 syn match ezwebInclude "^@i .*"
 syn match ezwebIndex "^@x .*"
 syn match ezwebLang "^@l .*"
