@@ -11,13 +11,14 @@ syn match ezwebLang "^@l .*"
 
 hi def link ezwebEscape Special
 hi def link ezwebTitledSection Statement
-hi def link ezwebSection Special
+hi def link ezwebSection Statement
 hi def link ezwebInclude PreProc
 hi def link ezwebIndex PreProc
 hi def link ezwebLang PreProc
-hi def link ezwebChunkStart Special
+hi def link ezwebChunkStart Identifier
 
 hi Statement cterm=bold gui=bold
+hi Identifier cterm=italic gui=italic
 
 let s:lang_overrides = ['haskell', 'python', 'javascript', 'bash', 'sh']
 
