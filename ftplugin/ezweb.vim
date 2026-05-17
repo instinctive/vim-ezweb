@@ -13,8 +13,8 @@ set foldexpr=GetCustomFold(v:lnum)
 function! GetCustomFold(lnum)
     let l:line = getline(a:lnum)
 
-    " If line starts exactly with '@*', start a level 1 fold
-    if l:line =~ '^@\*'
+    " If line starts exactly with '= ' or '@*', start a level 1 fold
+    if l:line =~ '^= \|^@\*'
         return '>1'
     endif
 
